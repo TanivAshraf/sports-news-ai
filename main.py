@@ -3,11 +3,10 @@ import requests
 import feedparser
 import json
 from datetime import datetime
-import google.generativeai as genai
+from google import genai
 
-# Setup Gemini API
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Setup Gemini API using the new Google GenAI library
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 # 1. Fetch Sports News from RSS Feeds
 RSS_FEEDS = [
@@ -22,7 +21,7 @@ for feed_url in RSS_FEEDS:
         raw_news.append({
             "title": entry.title,
             "link": entry.link,
-            "summary": entry.summary
+            "summary": getattr(entry, 'summary', '')
         })
 
 # 2. Ask Gemini AI to summarize into structured HTML
@@ -46,7 +45,10 @@ Raw News Data:
 {json.dumps(raw_news)}
 """
 
-response = model.generate_content(prompt)
+response = client.models.generate_content(
+    model='gemini-2.5-flash',
+    contents=prompt,
+)
 cards_html = response.text.replace("```html", "").replace("```", "")
 
 today_date = datetime.now().strftime("%B %d, %Y")
