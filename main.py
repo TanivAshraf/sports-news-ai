@@ -45,10 +45,24 @@ Raw News Data:
 {json.dumps(raw_news)}
 """
 
-response = client.models.generate_content(
-    model='gemini-2.5-flash',
-    contents=prompt,
-)
+# Try available Gemini models with fallback
+candidate_models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash']
+response = None
+
+for model_name in candidate_models:
+    try:
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+        )
+        print(f"Successfully generated news using model: {model_name}")
+        break
+    except Exception as e:
+        print(f"Model {model_name} unavailable, trying next... ({e})")
+
+if not response or not response.text:
+    raise RuntimeError("Failed to generate content with any available Gemini model.")
+
 cards_html = response.text.replace("```html", "").replace("```", "")
 
 today_date = datetime.now().strftime("%B %d, %Y")
