@@ -2,6 +2,7 @@ import os
 import requests
 import feedparser
 import json
+import random
 import time
 from datetime import datetime
 from google import genai
@@ -9,26 +10,34 @@ from google import genai
 # Setup Gemini API using the new Google GenAI library
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# 1. Fetch Sports News from RSS Feeds
+# 1. Fetch Sports News from 4 Multiple RSS Feeds
 RSS_FEEDS = [
     "http://www.espn.com/espn/rss/news",
-    "http://feeds.bbci.co.uk/sport/rss.xml"
+    "http://feeds.bbci.co.uk/sport/rss.xml",
+    "https://www.skysports.com/rss/12040",
+    "https://sports.yahoo.com/rss/"
 ]
 
 raw_news = []
 for feed_url in RSS_FEEDS:
-    feed = feedparser.parse(feed_url)
-    for entry in feed.entries[:5]: # Take top stories
-        raw_news.append({
-            "title": entry.title,
-            "link": entry.link,
-            "summary": getattr(entry, 'summary', '')
-        })
+    try:
+        feed = feedparser.parse(feed_url)
+        for entry in feed.entries[:5]: # Take top stories from each source
+            raw_news.append({
+                "title": entry.title,
+                "link": entry.link,
+                "summary": getattr(entry, 'summary', '')
+            })
+    except Exception as e:
+        print(f"Failed to fetch feed {feed_url}: {e}")
 
-# 2. Ask Gemini AI to summarize into structured HTML
+# Shuffle slightly to ensure fresh variety on each run
+random.shuffle(raw_news)
+
+# 2. Ask Gemini AI to pick the 6 most diverse news stories
 prompt = f"""
-You are a sports editor. I will give you raw sports news.
-Summarize the top 6 most interesting stories.
+You are a global sports editor. I will give you raw sports news from multiple sources.
+Select the 6 MOST UNIQUE AND DIVERSE news stories across different sports (e.g. Football, Cricket, Basketball, F1, Tennis). Do NOT pick duplicate topics.
 
 Format each story as an HTML block using EXACTLY this structure:
 <div class="card">
@@ -43,7 +52,7 @@ Format each story as an HTML block using EXACTLY this structure:
 Return ONLY the HTML code blocks for the cards. Do not wrap in ```html codeblocks.
 
 Raw News Data:
-{json.dumps(raw_news)}
+{json.dumps(raw_news[:20])}
 """
 
 # Try official aliases from Google AI Studio
