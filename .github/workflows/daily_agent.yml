@@ -2,8 +2,9 @@ name: Daily Sports AI Agent
 
 on:
   schedule:
-    - cron: '0 10 * * *' # Runs 10 AM UTC daily
-  workflow_dispatch: # Allows manual trigger
+    # Runs automatically every day at 10:00 AM Bangladesh Time (04:00 AM UTC)
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Allows you to run it manually anytime for testing
 
 permissions:
   contents: write # Grants permission to save updated website back to repository
