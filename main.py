@@ -2,6 +2,7 @@ import os
 import requests
 import feedparser
 import json
+import time
 from datetime import datetime
 from google import genai
 
@@ -45,23 +46,31 @@ Raw News Data:
 {json.dumps(raw_news)}
 """
 
-# Try available Gemini models with fallback
-candidate_models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash']
+# Try official aliases from Google AI Studio
+candidate_models = [
+    'gemini-flash-latest',
+    'gemini-2.0-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-pro-latest'
+]
+
 response = None
 
 for model_name in candidate_models:
     try:
+        print(f"Attempting model: {model_name}...")
         response = client.models.generate_content(
             model=model_name,
             contents=prompt,
         )
-        print(f"Successfully generated news using model: {model_name}")
+        print(f"SUCCESS! Generated news using model: {model_name}")
         break
     except Exception as e:
-        print(f"Model {model_name} unavailable, trying next... ({e})")
+        print(f"Model {model_name} failed: {e}")
+        time.sleep(2)
 
 if not response or not response.text:
-    raise RuntimeError("Failed to generate content with any available Gemini model.")
+    raise RuntimeError("Failed to generate content with any attempted Gemini model.")
 
 cards_html = response.text.replace("```html", "").replace("```", "")
 
